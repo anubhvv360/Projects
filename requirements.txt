@@ -1,4 +1,5 @@
 streamlit
 pdfminer.six
-google-generative-ai
+langchain-google-genai
+google-generativeai
 langchain
