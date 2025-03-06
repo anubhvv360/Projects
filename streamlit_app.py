@@ -22,22 +22,6 @@ def get_llm():
         max_tokens=2000
     )
 
-# Load Gemini API key from secrets and initialize LangChain LLM
-gemini_llm = GeminiLLM(api_key=st.secrets["GEMINI_API_KEY"])
-
-# Get API key from Streamlit secrets
-api_key = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=api_key)
-
-# Initialize the Gemini model
-def get_llm():
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro-latest",
-        google_api_key=api_key,
-        temperature=0.4,
-        max_tokens=2000
-    )
-
 # Helper functions
 def extract_cv_data(pdf_file) -> Dict[str, List[str]]:
     text = extract_text(pdf_file)
@@ -134,3 +118,8 @@ elif st.session_state.stage == "show_projects":
         st.session_state.function = ""
         st.session_state.projects = []
         chain.memory.clear()  # Reset conversation memory
+########################
+
+
+
+
