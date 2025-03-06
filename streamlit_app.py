@@ -9,22 +9,34 @@ from langchain.memory import ConversationBufferMemory
 import re
 from typing import List, Dict, Optional
 
-# Custom Gemini LLM for LangChain
-class GeminiLLM(LLM):
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-pro-latest")
+# Get API key from Streamlit secrets
+api_key = st.secrets["GEMINI_API_KEY"]
+genai.configure(api_key=api_key)
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        response = self.model.generate_content(prompt)
-        return response.text
-
-    @property
-    def _llm_type(self) -> str:
-        return "gemini"
+# Initialize the Gemini model
+def get_llm():
+    return ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro-latest",
+        google_api_key=api_key,
+        temperature=0.4,
+        max_tokens=2000
+    )
 
 # Load Gemini API key from secrets and initialize LangChain LLM
 gemini_llm = GeminiLLM(api_key=st.secrets["GEMINI_API_KEY"])
+
+# Get API key from Streamlit secrets
+api_key = st.secrets["GEMINI_API_KEY"]
+genai.configure(api_key=api_key)
+
+# Initialize the Gemini model
+def get_llm():
+    return ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro-latest",
+        google_api_key=api_key,
+        temperature=0.4,
+        max_tokens=2000
+    )
 
 # Helper functions
 def extract_cv_data(pdf_file) -> Dict[str, List[str]]:
