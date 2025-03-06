@@ -1,19 +1,34 @@
-# app_stage.py
+# app_stage_langchain_pdfminer.py
 import streamlit as st
-import fitz  # PyMuPDF
-from google.generativeai import GenerativeModel  # Placeholder for Gemini
+from pdfminer.high_level import extract_text
 import google.generativeai as genai
+from langchain.llms.base import LLM
+from langchain.chains import ConversationChain
+from langchain.prompts import PromptTemplate
+from langchain.memory import ConversationBufferMemory
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 
-# Load Gemini API key from secrets
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = GenerativeModel("gemini-1.5-pro-latest")
+# Custom Gemini LLM for LangChain
+class GeminiLLM(LLM):
+    def __init__(self, api_key: str):
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel("gemini-1.5-pro-latest")
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        response = self.model.generate_content(prompt)
+        return response.text
+
+    @property
+    def _llm_type(self) -> str:
+        return "gemini"
+
+# Load Gemini API key from secrets and initialize LangChain LLM
+gemini_llm = GeminiLLM(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Helper functions
 def extract_cv_data(pdf_file) -> Dict[str, List[str]]:
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    text = "".join(page.get_text() for page in doc)
+    text = extract_text(pdf_file)
     skills = re.findall(r"Skills?: (.*?)(?:\n\n|\n|$)", text, re.DOTALL) or [""]
     experience = re.findall(r"Experience: (.*?)(?:\n\n|\n|$)", text, re.DOTALL) or [""]
     projects = re.findall(r"Projects?: (.*?)(?:\n\n|\n|$)", text, re.DOTALL) or [""]
@@ -23,24 +38,34 @@ def extract_cv_data(pdf_file) -> Dict[str, List[str]]:
         "projects": projects[0].split("\n")
     }
 
+@st.cache_resource
+def initialize_conversation_chain():
+    memory = ConversationBufferMemory()
+    prompt = PromptTemplate(
+        input_variables=["history", "input"],
+        template="Given the conversation history: {history}\nUser input: {input}\nProvide a detailed, accurate response."
+    )
+    return ConversationChain(llm=gemini_llm, memory=memory, prompt=prompt)
+
+chain = initialize_conversation_chain()
+
 def calculate_match(cv_data: Dict, job_desc: str) -> float:
-    # Simulate match with Gemini (replace with actual logic)
-    prompt = f"Compare CV data: {cv_data} with Job Description: {job_desc}. Return a match percentage."
-    response = model.generate_content(prompt)
-    return float(response.text.strip("%"))  # Assume Gemini returns "XX%"
+    prompt = f"Compare CV data (skills: {cv_data['skills']}, experience: {cv_data['experience']}, projects: {cv_data['projects']}) with Job Description: {job_desc}. Return a match percentage as a number (0-100)."
+    response = chain.run(prompt)
+    return float(response.strip("%"))
 
 def generate_learning_resources() -> str:
-    return "Here are some resources:\n- Coursera: [Project Management Basics](https://www.coursera.org)\n- YouTube: [PM Tutorial](https://www.youtube.com)"
+    prompt = "Suggest learning resources (e.g., Coursera, YouTube) for improving skills based on the previous CV and job description comparison."
+    return chain.run(prompt)
 
 def identify_predominant_function(experience: List[str], job_desc: str) -> str:
-    prompt = f"From experience: {experience}, identify the predominant function for job: {job_desc}."
-    response = model.generate_content(prompt)
-    return response.text  # e.g., "Project Management"
+    prompt = f"From experience: {experience}, identify the predominant function aligned with job description: {job_desc}."
+    return chain.run(prompt)
 
 def generate_projects(function: str, past_projects: List[str], num_projects: int) -> List[str]:
-    prompt = f"Generate {num_projects} detailed, industry-convincing projects for {function} inspired by {past_projects}."
-    response = model.generate_content(prompt)
-    return response.text.split("\n\n")  # Assume Gemini separates projects with double newlines
+    prompt = f"Generate {num_projects} detailed, industry-convincing projects for the function '{function}' inspired by past projects: {past_projects}. Separate each project with '---'."
+    response = chain.run(prompt)
+    return response.split("---")
 
 # Initialize session state
 if "stage" not in st.session_state:
@@ -89,10 +114,11 @@ elif st.session_state.stage == "results":
 elif st.session_state.stage == "show_projects":
     st.write("### Suggested Projects for Your Resume")
     for i, project in enumerate(st.session_state.projects, 1):
-        st.write(f"**Project {i}**: {project}")
+        st.write(f"**Project {i}**: {project.strip()}")
     if st.button("Start Over"):
         st.session_state.stage = "input"
         st.session_state.cv_data = None
         st.session_state.match_percentage = 0.0
         st.session_state.function = ""
         st.session_state.projects = []
+        chain.memory.clear()  # Reset conversation memory
