@@ -1,4 +1,5 @@
 # app_stage_langchain_pdfminer.py
+pip install pdfminer.six
 import streamlit as st
 from pdfminer.high_level import extract_text
 import google.generativeai as genai
