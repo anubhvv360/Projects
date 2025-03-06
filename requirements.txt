@@ -1,4 +1,4 @@
 streamlit
-pymupdf
+pdfminer.six
 google-generative-ai
 langchain
