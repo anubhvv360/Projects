@@ -11,9 +11,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
-# ---------------------------
-# Streamlit Page Config
-# ---------------------------
 st.set_page_config(
     page_title="Resume Project Generator",
     layout="wide",
@@ -21,15 +18,9 @@ st.set_page_config(
     page_icon="📄"
 )
 
-# ---------------------------
-# Configure Gemini API
-# ---------------------------
-api_key = st.secrets.get("GEMINI_API_KEY")  # Set your Gemini API key in Streamlit secrets
+api_key = st.secrets.get("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# ---------------------------
-# Initialize LLM
-# ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
@@ -38,9 +29,6 @@ def get_llm():
         max_tokens=1500
     )
 
-# ---------------------------
-# Prompt Templates
-# ---------------------------
 job_analysis_template = '''
 You are an expert career consultant. Analyze the following job description for a role at {company_name} and extract:
 1. Industry (e.g., Retail, Healthcare, Technology)
@@ -94,9 +82,25 @@ Format exactly:
 * [Action/methodology with **bold** tools/processes]
 '''
 
-# ---------------------------
-# Prompt Initialization
-# ---------------------------
+project_backstory_template = """
+You are a career coach specializing in interview preparation for the {industry} industry and {domain} domain.
+
+For the following project descriptions for a {seniority} level position at {company_name}, create detailed backstories that the candidate can use during interviews when questioned about their experience.
+
+The backstories should:
+1. Be appropriate for the {seniority} level role
+2. Include specific challenges faced and how they were overcome
+3. Provide realistic context about stakeholders, team dynamics, and decision-making processes
+4. Include technical details that demonstrate domain expertise
+
+Here are the projects:
+{projects}
+
+For each project, provide:
+
+PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
+"""
+
 job_analysis_prompt = PromptTemplate(
     input_variables=["company_name", "job_description"],
     template=job_analysis_template
@@ -113,10 +117,11 @@ project_prompt = PromptTemplate(
     input_variables=["domain", "skills", "resume_text", "job_description", "industry", "seniority", "core_work", "num_projects"],
     template=project_generation_template
 )
+project_backstory_prompt = PromptTemplate(
+    input_variables=["industry", "domain", "seniority", "company_name", "projects"],
+    template=project_backstory_template
+)
 
-# ---------------------------
-# Core Functions
-# ---------------------------
 def analyze_job_description(job_desc, comp_name):
     llm = get_llm()
     chain = LLMChain(prompt=job_analysis_prompt, llm=llm)
@@ -138,7 +143,6 @@ def analyze_job_description(job_desc, comp_name):
             sen.group(1).strip() if sen else "Mid-level"
         )
 
-
 def extract_stems(res_text, job_desc):
     llm = get_llm()
     chain = LLMChain(prompt=stems_prompt, llm=llm)
@@ -148,7 +152,6 @@ def extract_stems(res_text, job_desc):
     except json.JSONDecodeError:
         return re.findall(r'"(.*?)"', resp)
 
-
 def extract_core_work(res_text):
     llm = get_llm()
     chain = LLMChain(prompt=core_work_prompt, llm=llm)
@@ -157,7 +160,6 @@ def extract_core_work(res_text):
         return json.loads(resp)
     except json.JSONDecodeError:
         return re.findall(r'"(.*?)"', resp)
-
 
 def generate_projects(domain, skills, resume_text, job_description, industry, seniority, core_work, num_projects):
     llm = get_llm()
@@ -173,9 +175,17 @@ def generate_projects(domain, skills, resume_text, job_description, industry, se
         num_projects=num_projects
     )
 
-# ---------------------------
-# UI Flow
-# ---------------------------
+def generate_backstories(industry, domain, seniority, company_name, projects):
+    llm = get_llm()
+    chain = LLMChain(prompt=project_backstory_prompt, llm=llm)
+    return chain.run(
+        industry=industry,
+        domain=domain,
+        seniority=seniority,
+        company_name=company_name,
+        projects=projects
+    )
+
 st.title("📄 Resume Project Generator")
 st.markdown("Generate domain-specific projects grounded in your core work, experience, and JD metrics.")
 
@@ -225,15 +235,29 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download",
+                label="Download Projects",
                 data=projects_md,
                 file_name=f"projects_{company_name.replace(' ','_')}.txt",
                 mime="text/plain"
             )
+            if st.button("📖 Generate Project Backstories"):
+                with st.spinner("Generating project backstories..."):
+                    backstories = generate_backstories(
+                        industry=st.session_state['industry'],
+                        domain=st.session_state['domain'],
+                        seniority=st.session_state['seniority'],
+                        company_name=company_name,
+                        projects=projects_md
+                    )
+                st.subheader("Project Backstories")
+                st.markdown(backstories)
+                st.download_button(
+                    label="Download Backstories",
+                    data=backstories,
+                    file_name=f"backstories_{company_name.replace(' ','_')}.txt",
+                    mime="text/plain"
+                )
 
-# ---------------------------
-# Sidebar
-# ---------------------------
 st.sidebar.title("ℹ️ About This App")
 st.sidebar.markdown(
     """
@@ -264,9 +288,6 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# ---------------------------
-# Footer
-# ---------------------------
 st.markdown(
     """
     <style>
