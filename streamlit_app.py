@@ -263,11 +263,12 @@ st.sidebar.markdown("""
     Upload your resume and a target job description to extract core work, skills, and JD insights.
 """)
 st.sidebar.markdown("---")
+st.sidebar.markdown("### 📦 Library Versions")
 st.sidebar.markdown(f"🔹 **Streamlit**: {st.__version__}")
 st.sidebar.markdown(f"🔹 **LangChain**: {langchain.__version__}")
 st.sidebar.markdown(f"🔹 **PyPDF2**: {PyPDF2.__version__}")
 
-st.sidebar.title("Tips for Best Results")
+st.sidebar.title("💡 Tips for Best Results")
 st.sidebar.markdown("""
     - Use a machine-readable PDF resume
     - Provide the complete job description for accurate analysis
@@ -278,6 +279,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
 """, unsafe_allow_html=True)
+st.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
 
 st.markdown("""
     <style>
