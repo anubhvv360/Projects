@@ -160,7 +160,7 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze button
 if resume_file and company_name and job_description:
-    if st.button("Analyze Resume & Extract Skills"):
+    if st.button("🔍 Analyze & Extract Skills"):
         with st.spinner("Analyzing job description and resume..."):
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
