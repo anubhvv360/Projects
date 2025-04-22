@@ -71,6 +71,17 @@ You are an industry expert in {domain}. Given the selected skills {skills} from 
 {resume_text}
 and job description:
 {job_description}
+
+For each project:
+1. Create a compelling, specific project heading (not generic)
+2. Create 3-4 bullet points that describe the project:
+   - First bullet MUST include a quantifiable business impact with specific metrics (use realistic numbers)
+   - Remaining bullets should describe the specific actions, methodologies, tools, and processes used
+   - Use industry-specific terminology, frameworks, and metrics that would be recognized by hiring managers
+   - Include specific company types, product categories, or technical details that show deep domain knowledge
+   - Avoid vague or generic statements; be detailed and specific enough to be convincing to industry insiders
+   - BOLD key terms, tools, metrics, and industry-specific terminology by surrounding them with ** (e.g., **KPI**)
+
 Generate {num_projects} ATS-friendly resume projects. For each project, output:
 
 ### Project {{n}}: [Title]
