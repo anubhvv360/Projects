@@ -224,16 +224,6 @@ st.sidebar.markdown(
     """
 )
 
-st.sidebar.title("Example Output Format")
-st.sidebar.markdown(
-    """
-    ### Project Title
-    * First bullet with **bold keywords** and impact metrics
-    * Second bullet with **technical skills** used
-    * Third bullet explaining the **methodology** applied
-    """
-)
-
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
