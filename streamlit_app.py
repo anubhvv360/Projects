@@ -98,7 +98,7 @@ The backstories should:
 
 For each project, provide:
 
-Output: PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
+PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
 
 """
 
