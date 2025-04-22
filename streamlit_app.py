@@ -180,7 +180,7 @@ if 'stems' in st.session_state:
         for skill in selected_skills:
             st.write(f"- {skill}")
         num_projects = st.slider("How many projects to generate?", 1, 5, 3)
-        if st.button("Generate Projects"):
+        if st.button("🚀 Generate Projects"):
             with st.spinner("Generating projects..."):
                 projects_md = generate_projects(
                     domain=st.session_state['domain'],
