@@ -280,41 +280,9 @@ st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-    <style>
-    @keyframes gradientPulse {
-        0% { background-position: 0% 50%; filter: brightness(1); }
-        50% { background-position: 100% 50%; filter: brightness(1.1); }
-        100% { background-position: 0% 50%; filter: brightness(1); }
-    }
-
-    .animated-link-button {
-        background: linear-gradient(90deg, red, orange, red);
-        background-size: 300% 300%;
-        animation: gradientPulse 6s ease infinite;
-        color: white;
-        padding: 12px 20px;
-        font-size: 16px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: 500;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    </style>
-
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="https://anubhav-genai.streamlit.app/" target="_blank">
-            Check out my other GenAI Application here!
-        </a>
-    </div>
-""", unsafe_allow_html=True)
-
-
-
+# Sidebar button
+if st.sidebar.button("Check out my other GenAI Applications"):
+    st.experimental_open_url("https://anubhav-genai.streamlit.app/")
 
 
 st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
