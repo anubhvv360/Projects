@@ -289,7 +289,7 @@ st.sidebar.markdown("""
     }
 
     .animated-link-button {
-        background: linear-gradient(90deg, #00c6ff, #0072ff, #00c6ff);
+        background: linear-gradient(90deg, red, orange, red);
         background-size: 300% 300%;
         animation: gradientPulse 6s ease infinite;
         color: white;
@@ -307,7 +307,7 @@ st.sidebar.markdown("""
     </style>
 
     <div style="text-align: center; margin-top: 20px;">
-        <a href="https://anubhav-genai.streamlit.app/" target="_blank" class="animated-link-button">
+        <a href="https://anubhav-genai.streamlit.app/" target="_blank">
             Check out my other GenAI Application here!
         </a>
     </div>
