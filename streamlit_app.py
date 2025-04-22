@@ -178,6 +178,7 @@ def generate_backstories(industry, domain, seniority, company_name, projects):
     return chain.run(
         industry=industry,
         domain=domain,
+        skills=json.dumps(skills),
         seniority=seniority,
         company_name=company_name,
         projects=projects
