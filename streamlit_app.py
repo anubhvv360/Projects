@@ -280,11 +280,6 @@ st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
 """, unsafe_allow_html=True)
 
-# Sidebar button
-if st.sidebar.button("Check out my other GenAI Applications"):
-    st.experimental_open_url("https://anubhav-genai.streamlit.app/")
-
-
 st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
 
 st.markdown("""
