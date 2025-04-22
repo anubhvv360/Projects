@@ -283,15 +283,15 @@ st.sidebar.markdown("""
 st.sidebar.markdown(
     """
     <a href="https://anubhav-genai.streamlit.app/" target="_blank">
-        <button style='font-size:16px; padding:10px 20px; width:100%; border-radius:8px; background-color:#4CAF50; color:white; border:none;'>
-            Open GenAI App
+        <button style='all: unset; font-size:16px; padding:8px 16px; border: 1px solid #ccc; border-radius:4px; cursor:pointer;'>
+            Check out my other GenAI Application here!
         </button>
     </a>
     """,
     unsafe_allow_html=True
 )
 
-#st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
+st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
 
 st.markdown("""
     <style>
