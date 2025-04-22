@@ -193,5 +193,5 @@ st.sidebar.markdown("""
 - Provide the full job description for accurate analysis.
 - Select the experience stems that best match your target role.
 - Adjust the number of projects to fit your resume length.
-""
+"""
 )
