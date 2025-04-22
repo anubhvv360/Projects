@@ -149,7 +149,7 @@ def extract_stems(res_text, job_desc):
         return re.findall(r'"(.*?)"', resp)
 
 
- def extract_core_work(res_text):
+def extract_core_work(res_text):
     llm = get_llm()
     chain = LLMChain(prompt=core_work_prompt, llm=llm)
     resp = chain.run(resume_text=res_text)
