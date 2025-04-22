@@ -225,7 +225,7 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download Projects as Text",
+                label="Download",
                 data=projects_md,
                 file_name=f"projects_{company_name.replace(' ','_')}.txt",
                 mime="text/plain"
