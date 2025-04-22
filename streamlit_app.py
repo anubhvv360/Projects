@@ -152,7 +152,7 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze and extract skills
 if resume_file and company_name and job_description:
-    if st.button("Analyze Resume & Extract Skills"):
+    if st.button("🔍 Analyze & Extract Skills"):
         with st.spinner("Extracting resume, analyzing JD, and extracting skills..."):
             # extract resume text
             reader = PyPDF2.PdfReader(resume_file)
@@ -184,7 +184,7 @@ if 'stems' in st.session_state:
             st.write(f"- {skill}")
 
         num_projects = st.slider("How many projects to generate?", 1, 5, 3)
-        if st.button("Generate Projects"):
+        if st.button("🚀 Generate Projects"):
             with st.spinner("Generating projects..."):
                 projects_md = generate_projects(
                     domain=st.session_state['domain'],
@@ -198,7 +198,7 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download Projects as Text",
+                label="Download",
                 data=projects_md,
                 file_name=f"projects_{company_name.replace(' ', '_')}.txt",
                 mime="text/plain"
@@ -227,16 +227,6 @@ st.sidebar.markdown(
     - Provide the full job description to surface relevant KPIs
     - Select skills you’ve demonstrably used in past roles
     - Limit generated projects to those grounded in real experience
-    """
-)
-
-st.sidebar.title("Example Output Format")
-st.sidebar.markdown(
-    """
-    ### Project Title
-    * **Reduced** project delivery time by 20% through ...
-    * Implemented **Agile** methodologies using JIRA and Confluence
-    * Coordinated with **stakeholders** to streamline ...
     """
 )
 
