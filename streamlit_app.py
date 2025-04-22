@@ -128,19 +128,15 @@ def analyze_job_description(job_desc, comp_name):
     result = chain.run(job_description=job_desc, company_name=comp_name)
     try:
         data = json.loads(result)
-        return (
-            data.get("Industry", "Unknown"),
-            data.get("Domain", "Unknown"),
-            data.get("Seniority", "Mid-level")
-        )
+        return data.get("Industry", "Unknown"), data.get("Domain", "Unknown"), data.get("Seniority", "Mid-level")
     except json.JSONDecodeError:
         ind = re.search(r'"Industry"\s*:\s*"(.*?)"', result)
         dom = re.search(r'"Domain"\s*:\s*"(.*?)"', result)
         sen = re.search(r'"Seniority"\s*:\s*"(.*?)"', result)
         return (
-            ind.group(1).strip() if ind else "Unknown",
-            dom.group(1).strip() if dom else "Unknown",
-            sen.group(1).strip() if sen else "Mid-level"
+            ind.group(1) if ind else "Unknown",
+            dom.group(1) if dom else "Unknown",
+            sen.group(1) if sen else "Mid-level"
         )
 
 def extract_stems(res_text, job_desc):
@@ -222,7 +218,7 @@ if 'stems' in st.session_state:
         num_projects = st.slider("How many projects?", 1, 5, 3)
         if st.button("🚀 Generate Projects"):
             with st.spinner("Generating projects..."):
-                projects_md = generate_projects(
+                st.session_state['projects_md'] = generate_projects(
                     domain=st.session_state['domain'],
                     skills=selected_skills,
                     resume_text=st.session_state['resume_text'],
@@ -232,64 +228,57 @@ if 'stems' in st.session_state:
                     core_work=st.session_state['core_work'],
                     num_projects=num_projects
                 )
+        if 'projects_md' in st.session_state:
             st.subheader("Generated Projects")
-            st.markdown(projects_md)
+            st.markdown(st.session_state['projects_md'])
             st.download_button(
                 label="Download Projects",
-                data=projects_md,
+                data=st.session_state['projects_md'],
                 file_name=f"projects_{company_name.replace(' ','_')}.txt",
                 mime="text/plain"
             )
             if st.button("📖 Generate Project Backstories"):
                 with st.spinner("Generating project backstories..."):
-                    backstories = generate_backstories(
+                    st.session_state['backstories'] = generate_backstories(
                         industry=st.session_state['industry'],
                         domain=st.session_state['domain'],
                         seniority=st.session_state['seniority'],
                         company_name=company_name,
-                        projects=projects_md
+                        projects=st.session_state['projects_md']
                     )
-                st.subheader("Project Backstories")
-                st.markdown(backstories)
-                st.download_button(
-                    label="Download Backstories",
-                    data=backstories,
-                    file_name=f"backstories_{company_name.replace(' ','_')}.txt",
-                    mime="text/plain"
-                )
+        if 'backstories' in st.session_state:
+            st.subheader("Project Backstories")
+            st.markdown(st.session_state['backstories'])
+            st.download_button(
+                label="Download Backstories",
+                data=st.session_state['backstories'],
+                file_name=f"backstories_{company_name.replace(' ','_')}.txt",
+                mime="text/plain"
+            )
 
 st.sidebar.title("ℹ️ About This App")
-st.sidebar.markdown(
-    """
+st.sidebar.markdown("""
     Resume Pivot Tool helps you generate ATS‑friendly, domain‑specific projects grounded in your actual experience.
     Upload your resume and a target job description to extract core work, skills, and JD insights.
-    """
-)
+""")
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📦 Library Versions")
 st.sidebar.markdown(f"🔹 **Streamlit**: {st.__version__}")
 st.sidebar.markdown(f"🔹 **LangChain**: {langchain.__version__}")
 st.sidebar.markdown(f"🔹 **PyPDF2**: {PyPDF2.__version__}")
 
 st.sidebar.title("Tips for Best Results")
-st.sidebar.markdown(
-    """
+st.sidebar.markdown("""
     - Use a machine-readable PDF resume
     - Provide the complete job description for accurate analysis
     - Select only skills you’ve actually used
     - Generated projects should logically extend from your core work
-    """
-)
+""")
 st.sidebar.markdown("---")
-st.sidebar.markdown(
-    """
+st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-st.markdown(
-    """
+st.markdown("""
     <style>
     @keyframes gradientAnimation {
         0% { background-position: 0% 50%; }
@@ -313,6 +302,4 @@ st.markdown(
     <div class="animated-gradient">
         Made with ❤️ by Anubhav Verma
     </div>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
