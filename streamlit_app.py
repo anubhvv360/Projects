@@ -243,7 +243,7 @@ if 'stems' in st.session_state:
                 with st.spinner("Generating project backstories..."):
                     st.session_state['backstories'] = generate_backstories(
                         industry=st.session_state['industry'],
-                        skills=selected_skills,
+                        skills=st.session_state['skills'],
                         domain=st.session_state['domain'],
                         seniority=st.session_state['seniority'],
                         company_name=company_name,
