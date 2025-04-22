@@ -291,7 +291,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-#st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
+st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
 
 st.markdown("""
     <style>
