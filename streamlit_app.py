@@ -282,23 +282,35 @@ st.sidebar.markdown("""
 
 st.sidebar.markdown(
     """
+    <style>
+    @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .animated-button {
+        font-size: 16px;
+        padding: 10px 20px;
+        width: 100%;
+        border-radius: 8px;
+        color: white;
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(270deg, #00c6ff, #0072ff);
+        background-size: 400% 400%;
+        animation: gradientMove 6s ease infinite;
+    }
+    </style>
+
     <a href="https://anubhav-genai.streamlit.app/" target="_blank">
-        <button style='
-            font-size:16px;
-            padding:10px 20px;
-            width:100%;
-            border-radius:8px;
-            background: linear-gradient(to right, #232526, #414345);
-            color:white;
-            border:none;
-            cursor:pointer;
-        '>
+        <button class="animated-button">
             Check out my other GenAI Application here!
         </button>
     </a>
     """,
     unsafe_allow_html=True
 )
+
 
 
 
