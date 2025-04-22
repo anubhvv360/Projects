@@ -92,7 +92,7 @@ Here are the projects:
 
 The backstories should:
 1. Be appropriate for the {seniority} level role
-2. Include specific challenges faced and how they were overcome
+2. Include specific challenges faced and how they were overcome using Skills: {skills}
 3. Provide realistic context about stakeholders, team dynamics, and decision-making processes
 4. Include technical details that demonstrate domain expertise
 
