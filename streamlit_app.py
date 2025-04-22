@@ -5,6 +5,7 @@ import streamlit as st
 import re
 import PyPDF2
 import google.generativeai as genai
+import langchain
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
@@ -33,7 +34,7 @@ def get_llm():
         model="gemini-2.0-flash",
         google_api_key=api_key,
         temperature=0.3,
-        max_tokens=1000
+        max_tokens=1200
     )
 
 # ---------------------------
@@ -55,9 +56,9 @@ Job Description:
 '''
 
 stems_template = '''
-You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples of such skills include "ERP Implementation", "Project Management", "Software Development".
+You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
 
-Output a JSON array of skills (strings), without additional text.
+Output a JSON array of skill strings, without additional text.
 
 Resume Text:
 {resume_text}
@@ -67,28 +68,26 @@ Job Description:
 '''
 
 project_generation_template = '''
-You are an industry expert in {domain}. Given the selected skills {skills} from a candidate with resume:
+You are an industry expert in {domain}. Given the selected skills [{skills}] from a candidate, their resume text, and the job description:
+
+Resume Text:
 {resume_text}
-and job description:
+
+Job Description:
 {job_description}
 
-For each project:
-1. Create a compelling, specific project heading (not generic)
-2. Create 3-4 bullet points that describe the project:
-   - First bullet MUST include a quantifiable business impact with specific metrics (use realistic numbers)
-   - Remaining bullets should describe the specific actions, methodologies, tools, and processes used
-   - Use industry-specific terminology, frameworks, and metrics that would be recognized by hiring managers
-   - Include specific company types, product categories, or technical details that show deep domain knowledge
-   - Avoid vague or generic statements; be detailed and specific enough to be convincing to industry insiders
-   - BOLD key terms, tools, metrics, and industry-specific terminology by surrounding them with ** (e.g., **KPI**)
+Generate {num_projects} ATS-friendly resume projects grounded strictly in the candidate's actual experience. Use only the selected skills; do not hallucinate. For each project:
+1. Create a compelling, specific project heading
+2. Provide 3–4 bullet points:
+   - First bullet must quantify business impact using metrics and **bold** key terms
+   - Remaining bullets describe actions, methodologies, tools, and processes
 
-Generate {num_projects} ATS-friendly resume projects. For each project, output:
-
+Format output:
 ### Project {{n}}: [Title]
-* [Quantifiable impact with **bold** key terms]
-* [Action/methodology with **bold** key terms]
-* [Action/methodology with **bold** key terms]
-* [Action/methodology with **bold** key terms]
+* [Quantified impact with **bold** terms]
+* [Action/methodology with **bold** terms]
+* [Action/methodology with **bold** terms]
+* [Action/methodology with **bold** terms]
 '''
 
 # ---------------------------
@@ -138,7 +137,6 @@ def extract_stems(res_text, job_desc):
 def generate_projects(domain, skills, resume_text, job_description, num_projects):
     llm = get_llm()
     chain = LLMChain(prompt=project_prompt, llm=llm)
-    # Prepare skills list string
     skills_str = ", ".join(skills)
     projects_md = chain.run(
         domain=domain,
@@ -153,7 +151,7 @@ def generate_projects(domain, skills, resume_text, job_description, num_projects
 # UI Flow
 # ---------------------------
 st.title("📄 Resume Project Generator")
-st.markdown("Generate domain-specific resume stems and projects based on your resume and a target job description.")
+st.markdown("Generate domain-specific resume skills and projects grounded in your actual experience.")
 
 # Inputs
 resume_file = st.file_uploader("Upload Your Resume (PDF only)", type=["pdf"])
@@ -173,20 +171,15 @@ if resume_file and company_name and job_description:
             st.session_state['stems'] = stems
         st.success("Skill extraction complete.")
 
-# Display stems selection
+# Display stems and project options
 if 'stems' in st.session_state:
     st.subheader("Select Key Skills to Emphasize")
     selected_skills = st.multiselect("Relevant Skills", options=st.session_state['stems'])
-
     if selected_skills:
         st.markdown("**You selected:**")
         for skill in selected_skills:
             st.write(f"- {skill}")
-
-        # Slider for number of projects
         num_projects = st.slider("How many projects to generate?", 1, 5, 3)
-
-        # Generate projects button
         if st.button("Generate Projects"):
             with st.spinner("Generating projects..."):
                 projects_md = generate_projects(
@@ -199,12 +192,95 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download Projects as Markdown",
+                label="Download Projects as Text",
                 data=projects_md,
-                file_name=f"projects_{company_name.replace(' ', '_')}.md",
-                mime="text/markdown"
+                file_name=f"projects_{company_name.replace(' ', '_')}.txt",
+                mime="text/plain"
             )
 
+# ---------------------------
+# Sidebar
+# ---------------------------
+st.sidebar.title("ℹ️ About This App")
+st.sidebar.markdown(
+    """
+    Resume Pivot Tool helps you generate ATS-friendly, domain-specific projects grounded in your actual experience.
+    Upload your resume and a target job description to extract key skills and generate tailored projects.
+    """
+)
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📦 Library Versions")
+st.sidebar.markdown(f"🔹 **Streamlit**: {st.__version__}")
+st.sidebar.markdown(f"🔹 **LangChain**: {langchain.__version__}")
+st.sidebar.markdown(f"🔹 **PyPDF2**: {PyPDF2.__version__}")
+
+st.sidebar.title("Usage Statistics")
+st.sidebar.write(f"Total Tokens Consumed: {st.session_state.tokens_consumed}")
+st.sidebar.write(f"Query Tokens: {st.session_state.query_tokens}")
+st.sidebar.write(f"Response Tokens: {st.session_state.response_tokens}")
+
+st.sidebar.title("Tips for Best Results")
+st.sidebar.markdown(
+    """
+    - Upload a text-based PDF resume for accurate extraction
+    - Provide the full job description for better skill matching
+    - Select only the skills you’ve demonstrated in your career
+    - Limit projects to those grounded in your past roles
+    """
+)
+
+st.sidebar.title("Example Output Format")
+st.sidebar.markdown(
+    """
+    ### Project Title
+    * First bullet with **bold keywords** and impact metrics
+    * Second bullet with **technical skills** used
+    * Third bullet explaining the **methodology** applied
+    """
+)
+
+if st.sidebar.button("Reset Usage Counters"):
+    st.session_state.tokens_consumed = 0
+    st.session_state.query_tokens = 0
+    st.session_state.response_tokens = 0
+    st.sidebar.success("Counters reset successfully!")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    """
+    Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
+    """,
+    unsafe_allow_html=True
+)
+
+# ---------------------------
 # Footer
-st.markdown("---")
-st.markdown("Made with ❤️ by Anubhav Verma | Issues? anubhav.verma360@gmail.com")
+# ---------------------------
+st.markdown(
+    """
+    <style>
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .animated-gradient {
+        background: linear-gradient(90deg, blue, purple, blue);
+        background-size: 300% 300%;
+        animation: gradientAnimation 8s ease infinite;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin-top: 20px;
+        color: white;
+        font-weight: normal;
+        font-size: 18px;
+    }
+    </style>
+
+    <div class="animated-gradient">
+        Made with ❤️ by Anubhav Verma
+    </div>
+    """,
+    unsafe_allow_html=True
+)
