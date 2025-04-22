@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import streamlit as st
-import os
 import re
 import PyPDF2
 import google.generativeai as genai
@@ -41,7 +40,7 @@ genai.configure(api_key=api_key)
 # ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-pro-latest",
         google_api_key=api_key,
         temperature=0.3,
         max_tokens=1500
@@ -90,11 +89,10 @@ stems_prompt = PromptTemplate(
 # ---------------------------
 # Core Functions
 # ---------------------------
-def analyze_job_description(job_description, company_name):
+def analyze_job_description(job_desc, comp_name):
     llm = get_llm()
     chain = LLMChain(prompt=job_analysis_prompt, llm=llm)
-    result = chain.run(job_description=job_description, company_name=company_name)
-    # parse
+    result = chain.run(job_description=job_desc, company_name=comp_name)
     industry = re.search(r'Industry:\s*(.*)', result)
     domain = re.search(r'Domain:\s*(.*)', result)
     seniority = re.search(r'Seniority:\s*(.*)', result)
@@ -105,64 +103,76 @@ def analyze_job_description(job_description, company_name):
     )
 
 
-def extract_stems_from_resume(resume_text, job_description):
-    # split resume into bullet lines
-    bullets = [line.strip() for line in resume_text.split("\n") if line.strip().startswith("-") or line.strip().startswith("*")]
-    # format bullets for prompt
+def extract_stems(res_text, job_desc):
+    # Improved bullet extraction: any line longer than a threshold is considered
+    lines = res_text.split("\n")
+    bullets = []
+    for line in lines:
+        txt = line.strip()
+        if len(txt) > 30:  # threshold for substantive lines
+            # prefix as bullet for prompt
+            bullets.append(f"- {txt}")
+    if not bullets:
+        st.warning("No substantial lines found in resume; ensure your PDF contains extractable text.")
     bullets_text = "\n".join(bullets)
+    # Call LLM to filter relevant stems
     llm = get_llm()
     chain = LLMChain(prompt=stems_prompt, llm=llm)
-    response = chain.run(resume_bullets=bullets_text, job_description=job_description)
+    resp = chain.run(resume_bullets=bullets_text, job_description=job_desc)
+    # Parse JSON array or fallback to lines
+    stems = []
     try:
-        stems = re.findall(r'"(.*?)"', response)
+        stems = re.findall(r'"(.*?)"', resp)
         if not stems:
-            # fallback: split lines
-            stems = [line.strip('-* ').strip() for line in response.splitlines() if line.strip()]
+            stems = [line.strip('- ').strip() for line in resp.splitlines() if line.strip()]
     except Exception:
-        stems = [line.strip('-* ').strip() for line in response.splitlines() if line.strip()]
+        stems = [line.strip('- ').strip() for line in resp.splitlines() if line.strip()]
     return stems
 
 # ---------------------------
-# UI
+# UI Flow
 # ---------------------------
 st.title("📄 Resume Project Generator")
-st.markdown("Generate domain-specific resume stems and projects based on your existing resume and a target job description.")
+st.markdown("Generate domain-specific resume stems and projects based on your resume and a target job description.")
 
-# File upload
+# Inputs
 resume_file = st.file_uploader("Upload Your Resume (PDF only)", type=["pdf"])
 company_name = st.text_input("Target Company Name")
 job_description = st.text_area("Paste Job Description", height=250)
 
+# Analyze button
 if resume_file and company_name and job_description:
-    with st.spinner("Extracting resume text..."):
-        reader = PyPDF2.PdfReader(resume_file)
-        resume_text = "".join([p.extract_text() or "" for p in reader.pages])
-    st.success("Resume text extracted.")
-
-    # Analyze JD
-    industry, domain, seniority = analyze_job_description(job_description, company_name)
-    st.subheader("Job Analysis")
-    st.markdown(f"**Industry:** {industry}")
-    st.markdown(f"**Domain:** {domain}")
-    st.markdown(f"**Seniority:** {seniority}")
-
-    # Extract stems
-    if st.button("Identify Relevant Stems from Resume"):
-        with st.spinner("Identifying stems..."):
-            stems = extract_stems_from_resume(resume_text, job_description)
-        if stems:
+    if st.button("Analyze Resume & Extract Stems"):
+        with st.spinner("Extracting resume text and analyzing..."):
+            # Extract text
+            reader = PyPDF2.PdfReader(resume_file)
+            res_text = "".join([p.extract_text() or "" for p in reader.pages])
+            st.session_state['resume_text'] = res_text
+            # Analyze JD
+            ind, dom, sen = analyze_job_description(job_description, company_name)
+            st.session_state['industry'] = ind
+            st.session_state['domain'] = dom
+            st.session_state['seniority'] = sen
+            # Extract stems
+            stems = extract_stems(res_text, job_description)
             st.session_state['stems'] = stems
-            st.success(f"Found {len(stems)} relevant stems.")
-        else:
-            st.error("No stems identified. Check resume formatting.")
+        st.success("Analysis complete.")
+
+# Display analysis results
+if 'industry' in st.session_state:
+    st.subheader("Job Analysis")
+    st.markdown(f"**Industry:** {st.session_state['industry']}")
+    st.markdown(f"**Domain:** {st.session_state['domain']}")
+    st.markdown(f"**Seniority:** {st.session_state['seniority']}")
 
 # Display stems selection
 if 'stems' in st.session_state:
     st.subheader("Select Experience Stems to Use")
-    selected_stems = st.multiselect("Relevant Stems", options=st.session_state['stems'])
-    st.write("**You selected:**")
-    for s in selected_stems:
-        st.write(f"- {s}")
+    selected = st.multiselect("Relevant Stems", options=st.session_state['stems'])
+    if selected:
+        st.markdown("**You selected:**")
+        for s in selected:
+            st.write(f"- {s}")
 
 # Footer
 st.markdown("---")
