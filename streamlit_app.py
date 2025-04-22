@@ -40,7 +40,7 @@ genai.configure(api_key=api_key)
 # ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro-latest",
+        model="gemini-2.0-flash",
         google_api_key=api_key,
         temperature=0.3,
         max_tokens=1500
