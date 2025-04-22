@@ -85,7 +85,7 @@ Format exactly:
 project_backstory_template = """
 You are a career coach specialising in interview preparation for the {industry} industry and {domain} domain.
 
-For the following projects {projects} for a {seniority} level position at {company_name}, create detailed backstories that the candidate can use during interviews when questioned about their experience.
+For the following projects for a {seniority} level position at {company_name}, create detailed backstories that the candidate can use during interviews when questioned about their experience.
 
 Here are the projects:
 {projects}
@@ -98,7 +98,7 @@ The backstories should:
 
 For each project, provide:
 
-PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
+PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 100 words]
 
 """
 
