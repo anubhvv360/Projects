@@ -280,36 +280,39 @@ st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown(
-    """
+st.sidebar.markdown("""
     <style>
-    @keyframes gradientMove {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    @keyframes gradientPulse {
+        0% { background-position: 0% 50%; filter: brightness(1); }
+        50% { background-position: 100% 50%; filter: brightness(1.1); }
+        100% { background-position: 0% 50%; filter: brightness(1); }
     }
-    .animated-button {
-        font-size: 16px;
-        padding: 10px 20px;
-        width: 100%;
-        border-radius: 8px;
+
+    .animated-link-button {
+        background: linear-gradient(90deg, #00c6ff, #0072ff, #00c6ff);
+        background-size: 300% 300%;
+        animation: gradientPulse 6s ease infinite;
         color: white;
+        padding: 12px 20px;
+        font-size: 16px;
         border: none;
+        border-radius: 8px;
         cursor: pointer;
-        background: linear-gradient(120deg, #00c6ff, #0072ff);
-        background-size: 400% 400%;
-        animation: gradientAnimation 6s ease infinite;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 500;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     </style>
 
-    <a href="https://anubhav-genai.streamlit.app/" target="_blank">
-        <button class="animated-button">
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="https://anubhav-genai.streamlit.app/" target="_blank" class="animated-link-button">
             Check out my other GenAI Application here!
-        </button>
-    </a>
-    """,
-    unsafe_allow_html=True
-)
+        </a>
+    </div>
+""", unsafe_allow_html=True)
+
 
 
 
