@@ -282,31 +282,24 @@ st.sidebar.markdown("""
 
 st.sidebar.markdown(
     """
-    <style>
-    .st-btn-link {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-        font-weight: 500;
-        color: inherit;
-        background: transparent;
-        border: 1px solid rgba(250, 250, 250, 0.2);
-        border-radius: 0.5rem;
-        text-align: center;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-    .st-btn-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    </style>
-
-    <a href="https://anubhav-genai.streamlit.app/" target="_blank" class="st-btn-link">
-        Check out my other GenAI Application here!
+    <a href="https://anubhav-genai.streamlit.app/" target="_blank">
+        <button style='
+            font-size:16px;
+            padding:10px 20px;
+            width:100%;
+            border-radius:8px;
+            background: linear-gradient(to right, #232526, #414345);
+            color:white;
+            border:none;
+            cursor:pointer;
+        '>
+            Check out my other GenAI Application here!
+        </button>
     </a>
     """,
     unsafe_allow_html=True
 )
+
 
 
 st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
