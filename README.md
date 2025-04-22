@@ -1,6 +1,6 @@
-# Resume Project Generator
+# Resume Pivot Tool
 
-A Gen AI tool that helps job‑seekers pivot their careers by extracting their core domain/functional skills and generating ATS‑friendly, experience‑grounded projects based on their actual resume and a target job description. Built with LangChain + Google Gemini 2.0 Flash.
+A Gen AI app that helps job‑seekers pivot into a new domain by generating ATS‑friendly, experience‑grounded résumé projects and interview backstories based on their actual PDF résumé and a target job description. Powered by LangChain + Google Gemini 2.0 Flash.
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://jdprojects2.streamlit.app/)
 
@@ -8,19 +8,50 @@ A Gen AI tool that helps job‑seekers pivot their careers by extracting their c
 
 ## 🚀 Features
 
-- **PDF Resume Upload** – Parses your existing resume at the paragraph‑level.  
-- **Job Description Analysis** – Uses Gemini to identify industry, domain, and seniority.  
-- **Skill Extraction** – Automatically extracts key domain/functional skills common to both your resume and the JD (e.g., ERP Implementation, Project Management).  
-- **Interactive Selection** – Pick which of your own skills to emphasize via a Streamlit multiselect.  
-- **Slider Control** – Choose how many project entries (1–5) to generate.  
-- **Experience‑Grounded Project Generation** – Produces quantifiable, ATS‑friendly project bullet points strictly based on your real experience (no hallucinations).  
-- **Download as Text** – Export your tailored projects as a `.txt` snippet ready for copy‑paste.
+- **Resume & JD Analysis**  
+  Upload your PDF résumé and paste a full job description to automatically extract:
+  - **Industry**  
+  - **Domain**  
+  - **Seniority Level**
+
+- **Core Work Extraction**  
+  Distil your top 3–5 “core work areas” from your résumé.
+
+- **Skill Stem Extraction**  
+  Identify domain & functional skills you’ve used that overlap with the JD (e.g., “Project Management,” “Supply Chain Optimisation”).
+
+- **Project Generation**  
+  Pick 1–5 projects to generate. Each project:
+  1. Builds on your real core work and selected skills  
+  2. Uses KPIs/metrics implied by the JD  
+  3. Bolds key terms & integrates industry/domain language  
+  4. Outputs Markdown‑formatted title + 3–4 bullets
+
+- **Project Backstories**  
+  For each generated project, produce a 2–3‑paragraph narrative you can use in interviews — covering challenges, solutions, stakeholders and technical depth.
+
+- **One‑Click Download**  
+  Export both **Projects** and **Backstories** as plain `.txt` files.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Streamlit** for the web UI  
-- **PyPDF2** for PDF parsing  
-- **LangChain** + **langchain‑google‑genai** for chaining prompts  
-- **Google Generative AI SDK** (`google.generativeai`) with **Gemini 2.0 Flash**
+- **Streamlit** — UI  
+- **PyPDF2** — PDF parsing  
+- **LangChain** + **langchain‑google‑genai** — Prompt chaining  
+- **Google Generative AI SDK** — Gemini 2.0 Flash integration  
+
+---
+
+## 📦 Installation
+
+```bash
+git clone https://github.com/your‑username/resume-pivot-tool.git
+cd resume-pivot-tool
+
+python3 -m venv venv
+source venv/bin/activate
+
+pip install -r requirements.txt
+
