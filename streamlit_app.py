@@ -296,9 +296,9 @@ st.sidebar.markdown(
         color: white;
         border: none;
         cursor: pointer;
-        background: linear-gradient(270deg, #00c6ff, #0072ff);
+        background: linear-gradient(120deg, #00c6ff, #0072ff);
         background-size: 400% 400%;
-        animation: gradientMove 6s ease infinite;
+        animation: gradientAnimation 6s ease infinite;
     }
     </style>
 
