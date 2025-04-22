@@ -99,6 +99,8 @@ Here are the projects:
 For each project, provide:
 
 PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
+
+**Do not ask for additional details**—use only these exact descriptions to build interview backstories.
 """
 
 job_analysis_prompt = PromptTemplate(
@@ -118,7 +120,7 @@ project_prompt = PromptTemplate(
     template=project_generation_template
 )
 project_backstory_prompt = PromptTemplate(
-    input_variables=["industry", "domain", "seniority", "company_name", "projects"],
+    input_variables=["projects", "industry", "domain", "seniority", "company_name"],
     template=project_backstory_template
 )
 
