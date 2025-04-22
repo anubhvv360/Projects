@@ -20,16 +20,6 @@ st.set_page_config(
 )
 
 # ---------------------------
-# Initialize Token Counters
-# ---------------------------
-if 'tokens_consumed' not in st.session_state:
-    st.session_state.tokens_consumed = 0
-if 'query_tokens' not in st.session_state:
-    st.session_state.query_tokens = 0
-if 'response_tokens' not in st.session_state:
-    st.session_state.response_tokens = 0
-
-# ---------------------------
 # Configure Gemini API
 # ---------------------------
 api_key = st.secrets.get("GEMINI_API_KEY")
@@ -76,6 +66,20 @@ Job Description:
 {job_description}
 '''
 
+project_generation_template = '''
+You are an industry expert in {domain}. Given the selected skills {skills} from a candidate with resume:
+{resume_text}
+and job description:
+{job_description}
+Generate {num_projects} ATS-friendly resume projects. For each project, output:
+
+### Project {{n}}: [Title]
+* [Quantifiable impact with **bold** key terms]
+* [Action/methodology with **bold** key terms]
+* [Action/methodology with **bold** key terms]
+* [Action/methodology with **bold** key terms]
+'''
+
 # ---------------------------
 # Prompt Initialization
 # ---------------------------
@@ -86,6 +90,10 @@ job_analysis_prompt = PromptTemplate(
 stems_prompt = PromptTemplate(
     input_variables=["resume_text","job_description"],
     template=stems_template
+)
+project_prompt = PromptTemplate(
+    input_variables=["domain","skills","resume_text","job_description","num_projects"],
+    template=project_generation_template
 )
 
 # ---------------------------
@@ -106,18 +114,29 @@ def analyze_job_description(job_desc, comp_name):
 
 
 def extract_stems(res_text, job_desc):
-    """
-    Extract domain and functional skills common to resume and job description.
-    """
     llm = get_llm()
     chain = LLMChain(prompt=stems_prompt, llm=llm)
     response = chain.run(resume_text=res_text, job_description=job_desc)
-    # parse JSON array
     try:
         stems = re.findall(r'"(.*?)"', response)
     except Exception:
         stems = []
     return stems
+
+
+def generate_projects(domain, skills, resume_text, job_description, num_projects):
+    llm = get_llm()
+    chain = LLMChain(prompt=project_prompt, llm=llm)
+    # Prepare skills list string
+    skills_str = ", ".join(skills)
+    projects_md = chain.run(
+        domain=domain,
+        skills=skills_str,
+        resume_text=resume_text,
+        job_description=job_description,
+        num_projects=num_projects
+    )
+    return projects_md
 
 # ---------------------------
 # UI Flow
@@ -132,37 +151,48 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze button
 if resume_file and company_name and job_description:
-    if st.button("Analyze Resume & Extract Skills" ):
+    if st.button("Analyze Resume & Extract Skills"):
         with st.spinner("Analyzing job description and resume..."):
-            # Extract resume text
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
             st.session_state['resume_text'] = res_text
-            # Analyze job description
             ind, dom, sen = analyze_job_description(job_description, company_name)
-            st.session_state['industry'] = ind
             st.session_state['domain'] = dom
-            st.session_state['seniority'] = sen
-            # Extract stems (skills)
             stems = extract_stems(res_text, job_description)
             st.session_state['stems'] = stems
         st.success("Skill extraction complete.")
 
-# Display analysis results
-if 'industry' in st.session_state:
-    st.subheader("Job Analysis")
-    st.markdown(f"**Industry:** {st.session_state['industry']}")
-    st.markdown(f"**Domain:** {st.session_state['domain']}")
-    st.markdown(f"**Seniority:** {st.session_state['seniority']}" )
-
 # Display stems selection
 if 'stems' in st.session_state:
     st.subheader("Select Key Skills to Emphasize")
-    selected = st.multiselect("Relevant Skills", options=st.session_state['stems'])
-    if selected:
+    selected_skills = st.multiselect("Relevant Skills", options=st.session_state['stems'])
+
+    if selected_skills:
         st.markdown("**You selected:**")
-        for s in selected:
-            st.write(f"- {s}")
+        for skill in selected_skills:
+            st.write(f"- {skill}")
+
+        # Slider for number of projects
+        num_projects = st.slider("How many projects to generate?", 1, 5, 3)
+
+        # Generate projects button
+        if st.button("Generate Projects"):
+            with st.spinner("Generating projects..."):
+                projects_md = generate_projects(
+                    domain=st.session_state['domain'],
+                    skills=selected_skills,
+                    resume_text=st.session_state['resume_text'],
+                    job_description=job_description,
+                    num_projects=num_projects
+                )
+            st.subheader("Generated Projects")
+            st.markdown(projects_md)
+            st.download_button(
+                label="Download Projects as Markdown",
+                data=projects_md,
+                file_name=f"projects_{company_name.replace(' ', '_')}.md",
+                mime="text/markdown"
+            )
 
 # Footer
 st.markdown("---")
