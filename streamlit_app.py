@@ -30,9 +30,6 @@ genai.configure(api_key=api_key)
 # ---------------------------
 # Initialize LLM
 # ---------------------------
-# ---------------------------
-# Initialize LLM
-# ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
@@ -57,7 +54,6 @@ Job Description:
 {job_description}
 '''
 
-
 stems_template = '''
 You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
 Output a JSON array of skill strings, e.g.: ["ERP Implementation", "Project Management"]
@@ -69,29 +65,56 @@ Job Description:
 {job_description}
 '''
 
+core_work_template = '''
+You are a career coach. Analyze the following resume text to identify the candidate's core work areas—summarize in 3-5 concise phrases. Examples: "ERP Implementation", "Oracle ERP Technical Design", "PMO Process Governance".
+
+Resume Text:
+{resume_text}
+
+Output a JSON array of core work strings.
+'''
+
 project_generation_template = '''
-You are an industry expert in {domain}. Given these inputs:
-- Selected Skills: [{skills}]
-- Resume Text: {resume_text}
-- Job Description: {job_description}
-- Industry Context and Seniority: ["{industry}", "{seniority}"]
+You are an industry expert in {domain} within the {industry} sector. The candidate's core work areas are: [{core_work}]. Using the selected skills [{skills}], the resume text, and the job description, do the following:
 
-First, identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery time, process efficiency). Then generate {num_projects} ATS-friendly resume projects that:
-- Are strictly grounded in the candidate's actual experience and selected skills (no new domains).
-- Include a project title and 3–4 bullet points:
-  * First bullet quantifies business impact using one KPI and **bold** key terms.
-  * Remaining bullets describe actions, methodologies, tools, and processes, using keywords from the resume and JD.
+1. Identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery time, process efficiency).
+2. Generate {num_projects} ATS-friendly resume projects that:
+   - Build on the candidate's **core work areas** and selected skills—projects may be new but should logically extend from what they've done.
+   - Integrate **industry** and **domain** keywords in titles and bullets to reinforce alignment.
+   - Include a project title and 3–4 bullet points:
+     * First bullet quantifies business impact using a KPI and **bold** key terms.
+     * Remaining bullets describe actions, methodologies, tools, processes, weaving in the candidate's core work and JD terminology.
 
-Format:
-### Project {{n}}: [Title]
-* [Quantified impact with **bold** KPI]
-* [Action/methodology with **bold** terms]
-* [Action/methodology with **bold** terms]
-* [Action/methodology with **bold** terms]
+Format exactly:
+### Project {{n}}: [Title reflecting core work in {domain}]
+* [Quantified impact with **bold** KPI and domain/industry terms]
+* [Action/methodology with **bold** core work keywords]
+* [Action/methodology with **bold** domain-specific terms]
+* [Action/methodology with **bold** tools/processes]
 '''
 
 # ---------------------------
 # Prompt Initialization
+# ---------------------------
+job_analysis_prompt = PromptTemplate(
+    input_variables=["company_name","job_description"],
+    template=job_analysis_template
+)
+stems_prompt = PromptTemplate(
+    input_variables=["resume_text","job_description"],
+    template=stems_template
+)
+core_work_prompt = PromptTemplate(
+    input_variables=["resume_text"],
+    template=core_work_template
+)
+project_prompt = PromptTemplate(
+    input_variables=["domain","skills","resume_text","job_description","industry","seniority","core_work","num_projects"],
+    template=project_generation_template
+)
+
+# ---------------------------
+# Core Functions
 # ---------------------------
 job_analysis_prompt = PromptTemplate(
     input_variables=["company_name","job_description"],
@@ -117,9 +140,9 @@ def analyze_job_description(job_desc, comp_name):
         data = json.loads(result)
         return data.get("Industry", "Unknown"), data.get("Domain", "Unknown"), data.get("Seniority", "Mid-level")
     except json.JSONDecodeError:
-        industry = re.search(r'"Industry"\s*[:]\s*"(.*?)"', result)
-        domain = re.search(r'"Domain"\s*[:]\s*"(.*?)"', result)
-        seniority = re.search(r'"Seniority"\s*[:]\s*"(.*?)"', result)
+        industry = re.search(r'"Industry"\s*:\s*"(.*?)"', result)
+        domain = re.search(r'"Domain"\s*:\s*"(.*?)"', result)
+        seniority = re.search(r'"Seniority"\s*:\s*"(.*?)"', result)
         return (
             industry.group(1).strip() if industry else "Unknown",
             domain.group(1).strip() if domain else "Unknown",
@@ -155,7 +178,7 @@ def generate_projects(domain, skills, resume_text, job_description, industry, se
 # ---------------------------
 # UI Flow
 # ---------------------------
-st.title("📄 Resume Project Generator")
+
 st.markdown("Generate domain-specific projects grounded in your actual experience, enriched by JD metrics.")
 
 # Inputs
@@ -208,9 +231,9 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download Projects as Text",
-                data=projects_md,
-                file_name=f"projects_{company_name.replace(' ', '_')}.txt",
+                label="Download Projects as Text",  
+                data=projects_md,  
+                file_name=f"projects_{company_name.replace(' ', '_')}.txt",  
                 mime="text/plain"
             )
 
