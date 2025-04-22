@@ -79,7 +79,7 @@ Job Description:
 Generate {num_projects} ATS-friendly resume projects grounded strictly in the candidate's actual experience. Use only the selected skills; do not hallucinate. For each project:
 1. Create a compelling, specific project heading
 2. Provide 3–4 bullet points:
-   - First bullet must quantify business impact using metrics and **bold** key terms
+   - First bullet must quantify business impact using quantitative metrics and **bold** key terms
    - Remaining bullets describe actions, methodologies, tools, and processes
 
 Format output:
