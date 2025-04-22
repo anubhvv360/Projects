@@ -279,7 +279,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("""
     Have feedback? [Reach out!](mailto:anubhav.verma360@gmail.com) 😊
 """, unsafe_allow_html=True)
-st.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
+st.sidebar.caption("Disclaimer: This tool just provides assistance. The creator is not responsible for any errors or consequences resulting from its use.")
 
 st.markdown("""
     <style>
