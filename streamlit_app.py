@@ -85,7 +85,10 @@ Format exactly:
 project_backstory_template = """
 You are a career coach specialising in interview preparation for the {industry} industry and {domain} domain.
 
-For the following projects for a {seniority} level position at {company_name}, create detailed backstories that the candidate can use during interviews when questioned about their experience.
+For the following projects {projects} for a {seniority} level position at {company_name}, create detailed backstories that the candidate can use during interviews when questioned about their experience.
+
+Here are the projects:
+{projects}
 
 The backstories should:
 1. Be appropriate for the {seniority} level role
@@ -93,14 +96,10 @@ The backstories should:
 3. Provide realistic context about stakeholders, team dynamics, and decision-making processes
 4. Include technical details that demonstrate domain expertise
 
-Here are the projects:
-{projects}
-
 For each project, provide:
 
-PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
+Output: PROJECT BACKSTORY: [2-3 paragraphs with context, challenges, and approach. Each paragraph no more than 120 words]
 
-**Do not ask for additional details**—use only these exact projects {projects} to build interview backstories.
 """
 
 job_analysis_prompt = PromptTemplate(
