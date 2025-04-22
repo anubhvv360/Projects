@@ -51,11 +51,12 @@ You are an expert career consultant. Analyze the following job description for a
 3. Seniority level (Entry-level, Mid-level, Senior, Executive)
 
 Return your answer as a JSON object with keys: "Industry", "Domain", "Seniority". Example:
-{"Industry": "Technology", "Domain": "Project Management", "Seniority": "Mid-level"}
+{{"Industry": "Technology", "Domain": "Project Management", "Seniority": "Mid-level"}}
 
 Job Description:
 {job_description}
 '''
+
 
 stems_template = '''
 You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
