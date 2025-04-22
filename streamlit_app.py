@@ -24,7 +24,7 @@ st.set_page_config(
 # ---------------------------
 # Configure Gemini API
 # ---------------------------
-api_key = st.secrets.get("GEMINI_API_KEY")
+api_key = st.secrets.get("GEMINI_API_KEY")  # Set your Gemini API key in Streamlit secrets
 genai.configure(api_key=api_key)
 
 # ---------------------------
@@ -47,16 +47,16 @@ You are an expert career consultant. Analyze the following job description for a
 2. Domain within that industry (e.g., Data Science, Project Management)
 3. Seniority level (Entry-level, Mid-level, Senior, Executive)
 
-Return your answer as a JSON object with keys: "Industry", "Domain", "Seniority". Example:
-{{"Industry": "Technology", "Domain": "Project Management", "Seniority": "Mid-level"}}
+Return your answer as a JSON object with keys: "Industry", "Domain", "Seniority".
 
 Job Description:
 {job_description}
 '''
 
 stems_template = '''
-You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
-Output a JSON array of skill strings, e.g.: ["ERP Implementation", "Project Management"]
+You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples: "ERP Implementation", "Project Management", "Software Development".
+
+Output a JSON array of skill strings.
 
 Resume Text:
 {resume_text}
@@ -66,27 +66,28 @@ Job Description:
 '''
 
 core_work_template = '''
-You are a career coach. Analyze the following resume text to identify the candidate's core work areas—summarize in 3-5 concise phrases. Examples: "ERP Implementation", "Oracle ERP Technical Design", "PMO Process Governance".
+You are a career coach. Analyze the resume text and identify the candidate's core work areas—summarize in 3-5 concise phrases. Examples: "ERP Implementation", "Oracle ERP Technical Design", "PMO Process Governance".
+
+Output a JSON array of core work strings.
 
 Resume Text:
 {resume_text}
-
-Output a JSON array of core work strings.
 '''
 
 project_generation_template = '''
-You are an industry expert in {domain} within the {industry} sector. The candidate's core work areas are: [{core_work}]. Using the selected skills [{skills}], the resume text, and the job description, do the following:
+You are an industry expert in {domain} within the {industry} sector. The candidate's core work areas are: {core_work}. Skills: {skills}.
 
-1. Identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery time, process efficiency).
+Using the resume, job description, and these contexts:
+1. Identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly influence (e.g., cost savings %, project delivery time, process efficiency).
 2. Generate {num_projects} ATS-friendly resume projects that:
-   - Build on the candidate's **core work areas** and selected skills—projects may be new but should logically extend from what they've done.
-   - Integrate **industry** and **domain** keywords in titles and bullets to reinforce alignment.
+   - Build on core work areas and selected skills—projects can be new but logically extend past work.
+   - Integrate industry/domain keywords in titles & bullets to reinforce alignment.
    - Include a project title and 3–4 bullet points:
-     * First bullet quantifies business impact using a KPI and **bold** key terms.
-     * Remaining bullets describe actions, methodologies, tools, processes, weaving in the candidate's core work and JD terminology.
+     * First bullet quantifies business impact using a KPI and **bold** domain/industry terms.
+     * Remaining bullets describe actions, methodologies, tools, and processes, weaving in core work areas and JD terminology.
 
 Format exactly:
-### Project {{n}}: [Title reflecting core work in {domain}]
+### Project {{n}}: [Title reflecting core work & domain]
 * [Quantified impact with **bold** KPI and domain/industry terms]
 * [Action/methodology with **bold** core work keywords]
 * [Action/methodology with **bold** domain-specific terms]
@@ -97,11 +98,11 @@ Format exactly:
 # Prompt Initialization
 # ---------------------------
 job_analysis_prompt = PromptTemplate(
-    input_variables=["company_name","job_description"],
+    input_variables=["company_name", "job_description"],
     template=job_analysis_template
 )
 stems_prompt = PromptTemplate(
-    input_variables=["resume_text","job_description"],
+    input_variables=["resume_text", "job_description"],
     template=stems_template
 )
 core_work_prompt = PromptTemplate(
@@ -109,23 +110,7 @@ core_work_prompt = PromptTemplate(
     template=core_work_template
 )
 project_prompt = PromptTemplate(
-    input_variables=["domain","skills","resume_text","job_description","industry","seniority","core_work","num_projects"],
-    template=project_generation_template
-)
-
-# ---------------------------
-# Core Functions
-# ---------------------------
-job_analysis_prompt = PromptTemplate(
-    input_variables=["company_name","job_description"],
-    template=job_analysis_template
-)
-stems_prompt = PromptTemplate(
-    input_variables=["resume_text","job_description"],
-    template=stems_template
-)
-project_prompt = PromptTemplate(
-    input_variables=["domain","skills","resume_text","job_description","industry","seniority","num_projects"],
+    input_variables=["domain", "skills", "resume_text", "job_description", "industry", "seniority", "core_work", "num_projects"],
     template=project_generation_template
 )
 
@@ -138,85 +123,93 @@ def analyze_job_description(job_desc, comp_name):
     result = chain.run(job_description=job_desc, company_name=comp_name)
     try:
         data = json.loads(result)
-        return data.get("Industry", "Unknown"), data.get("Domain", "Unknown"), data.get("Seniority", "Mid-level")
-    except json.JSONDecodeError:
-        industry = re.search(r'"Industry"\s*:\s*"(.*?)"', result)
-        domain = re.search(r'"Domain"\s*:\s*"(.*?)"', result)
-        seniority = re.search(r'"Seniority"\s*:\s*"(.*?)"', result)
         return (
-            industry.group(1).strip() if industry else "Unknown",
-            domain.group(1).strip() if domain else "Unknown",
-            seniority.group(1).strip() if seniority else "Mid-level"
+            data.get("Industry", "Unknown"),
+            data.get("Domain", "Unknown"),
+            data.get("Seniority", "Mid-level")
+        )
+    except json.JSONDecodeError:
+        ind = re.search(r'"Industry"\s*:\s*"(.*?)"', result)
+        dom = re.search(r'"Domain"\s*:\s*"(.*?)"', result)
+        sen = re.search(r'"Seniority"\s*:\s*"(.*?)"', result)
+        return (
+            ind.group(1).strip() if ind else "Unknown",
+            dom.group(1).strip() if dom else "Unknown",
+            sen.group(1).strip() if sen else "Mid-level"
         )
 
 
 def extract_stems(res_text, job_desc):
     llm = get_llm()
     chain = LLMChain(prompt=stems_prompt, llm=llm)
-    response = chain.run(resume_text=res_text, job_description=job_desc)
+    resp = chain.run(resume_text=res_text, job_description=job_desc)
     try:
-        stems = json.loads(response)
+        return json.loads(resp)
     except json.JSONDecodeError:
-        stems = re.findall(r'"(.*?)"', response)
-    return stems
+        return re.findall(r'"(.*?)"', resp)
 
 
-def generate_projects(domain, skills, resume_text, job_description, industry, seniority, num_projects):
+ def extract_core_work(res_text):
+    llm = get_llm()
+    chain = LLMChain(prompt=core_work_prompt, llm=llm)
+    resp = chain.run(resume_text=res_text)
+    try:
+        return json.loads(resp)
+    except json.JSONDecodeError:
+        return re.findall(r'"(.*?)"', resp)
+
+
+def generate_projects(domain, skills, resume_text, job_description, industry, seniority, core_work, num_projects):
     llm = get_llm()
     chain = LLMChain(prompt=project_prompt, llm=llm)
-    skills_str = ", ".join(skills)
     return chain.run(
         domain=domain,
-        skills=skills_str,
+        skills=json.dumps(skills),
         resume_text=resume_text,
         job_description=job_description,
         industry=industry,
         seniority=seniority,
+        core_work=json.dumps(core_work),
         num_projects=num_projects
     )
 
 # ---------------------------
 # UI Flow
 # ---------------------------
+st.title("📄 Resume Project Generator")
+st.markdown("Generate domain-specific projects grounded in your core work, experience, and JD metrics.")
 
-st.markdown("Generate domain-specific projects grounded in your actual experience, enriched by JD metrics.")
-
-# Inputs
 resume_file = st.file_uploader("Upload Your Resume (PDF only)", type=["pdf"])
 company_name = st.text_input("Target Company Name")
 job_description = st.text_area("Paste Job Description", height=250)
 
-# Analyze and extract skills
 if resume_file and company_name and job_description:
-    if st.button("🔍 Analyze Resume & Extract Skills"):
-        with st.spinner("Extracting resume, analyzing JD, and extracting skills..."):
+    if st.button("🔍 Analyze & Extract"):
+        with st.spinner("Analyzing resume & job description..."):
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
             st.session_state['resume_text'] = res_text
             ind, dom, sen = analyze_job_description(job_description, company_name)
-            st.session_state['industry'] = ind
-            st.session_state['domain'] = dom
-            st.session_state['seniority'] = sen
-            stems = extract_stems(res_text, job_description)
-            st.session_state['stems'] = stems
+            st.session_state['industry'], st.session_state['domain'], st.session_state['seniority'] = ind, dom, sen
+            st.session_state['stems'] = extract_stems(res_text, job_description)
+            st.session_state['core_work'] = extract_core_work(res_text)
         st.success("Analysis complete.")
 
-# Display JD summary and stems/project options
 if 'stems' in st.session_state:
     st.subheader("Job Analysis Summary")
     st.markdown(f"**Industry:** {st.session_state['industry']}")
     st.markdown(f"**Domain:** {st.session_state['domain']}")
     st.markdown(f"**Seniority:** {st.session_state['seniority']}")
 
+    st.subheader("Core Work Areas")
+    for cw in st.session_state['core_work']:
+        st.write(f"- {cw}")
+
     st.subheader("Select Key Skills to Emphasize")
     selected_skills = st.multiselect("Relevant Skills", options=st.session_state['stems'])
 
     if selected_skills:
-        st.markdown("**You selected:**")
-        for skill in selected_skills:
-            st.write(f"- {skill}")
-
-        num_projects = st.slider("How many projects to generate?", 1, 5, 3)
+        num_projects = st.slider("How many projects?", 1, 5, 3)
         if st.button("🚀 Generate Projects"):
             with st.spinner("Generating projects..."):
                 projects_md = generate_projects(
@@ -226,14 +219,15 @@ if 'stems' in st.session_state:
                     job_description=job_description,
                     industry=st.session_state['industry'],
                     seniority=st.session_state['seniority'],
+                    core_work=st.session_state['core_work'],
                     num_projects=num_projects
                 )
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download Projects as Text",  
-                data=projects_md,  
-                file_name=f"projects_{company_name.replace(' ', '_')}.txt",  
+                label="Download Projects as Text",
+                data=projects_md,
+                file_name=f"projects_{company_name.replace(' ','_')}.txt",
                 mime="text/plain"
             )
 
@@ -244,7 +238,7 @@ st.sidebar.title("ℹ️ About This App")
 st.sidebar.markdown(
     """
     Resume Pivot Tool helps you generate ATS‑friendly, domain‑specific projects grounded in your actual experience.
-    Upload your resume and a target job description to extract skills, JD metrics, and generate tailored projects.
+    Upload your resume and a target job description to extract core work, skills, and JD insights.
     """
 )
 st.sidebar.markdown("---")
@@ -256,13 +250,12 @@ st.sidebar.markdown(f"🔹 **PyPDF2**: {PyPDF2.__version__}")
 st.sidebar.title("Tips for Best Results")
 st.sidebar.markdown(
     """
-    - Use a machine-readable PDF resume for best text extraction
-    - Provide the full job description to surface relevant KPIs
-    - Select skills you’ve demonstrably used in past roles
-    - Limit generated projects to those grounded in real experience
+    - Use a machine-readable PDF resume
+    - Provide the complete job description for accurate analysis
+    - Select only skills you’ve actually used
+    - Generated projects should logically extend from your core work
     """
 )
-
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
