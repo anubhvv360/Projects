@@ -92,7 +92,7 @@ Here are the projects:
 
 The backstories should:
 1. Be appropriate for the {seniority} level role
-2. Include specific challenges faced and how they were overcome using Skills: {skills}
+2. Include specific challenges faced and how they were overcome
 3. Provide realistic context about stakeholders, team dynamics, and decision-making processes
 4. Include technical details that demonstrate domain expertise
 
@@ -119,7 +119,7 @@ project_prompt = PromptTemplate(
     template=project_generation_template
 )
 project_backstory_prompt = PromptTemplate(
-    input_variables=["projects", "industry", "domain", "seniority", "company_name", "skills"],
+    input_variables=["projects", "industry", "domain", "seniority", "company_name"],
     template=project_backstory_template
 )
 
@@ -178,7 +178,6 @@ def generate_backstories(industry, domain, seniority, company_name, projects):
     return chain.run(
         industry=industry,
         domain=domain,
-        skills=json.dumps(skills),
         seniority=seniority,
         company_name=company_name,
         projects=projects
@@ -243,7 +242,6 @@ if 'stems' in st.session_state:
                 with st.spinner("Generating project backstories..."):
                     st.session_state['backstories'] = generate_backstories(
                         industry=st.session_state['industry'],
-                        skills=st.session_state['skills'],
                         domain=st.session_state['domain'],
                         seniority=st.session_state['seniority'],
                         company_name=company_name,
