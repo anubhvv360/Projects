@@ -214,11 +214,6 @@ st.sidebar.markdown(f"🔹 **Streamlit**: {st.__version__}")
 st.sidebar.markdown(f"🔹 **LangChain**: {langchain.__version__}")
 st.sidebar.markdown(f"🔹 **PyPDF2**: {PyPDF2.__version__}")
 
-st.sidebar.title("Usage Statistics")
-st.sidebar.write(f"Total Tokens Consumed: {st.session_state.tokens_consumed}")
-st.sidebar.write(f"Query Tokens: {st.session_state.query_tokens}")
-st.sidebar.write(f"Response Tokens: {st.session_state.response_tokens}")
-
 st.sidebar.title("Tips for Best Results")
 st.sidebar.markdown(
     """
@@ -238,12 +233,6 @@ st.sidebar.markdown(
     * Third bullet explaining the **methodology** applied
     """
 )
-
-if st.sidebar.button("Reset Usage Counters"):
-    st.session_state.tokens_consumed = 0
-    st.session_state.query_tokens = 0
-    st.session_state.response_tokens = 0
-    st.sidebar.success("Counters reset successfully!")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
