@@ -30,6 +30,9 @@ genai.configure(api_key=api_key)
 # ---------------------------
 # Initialize LLM
 # ---------------------------
+# ---------------------------
+# Initialize LLM
+# ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
@@ -54,6 +57,7 @@ Job Description:
 {job_description}
 '''
 
+
 stems_template = '''
 You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
 Output a JSON array of skill strings, e.g.: ["ERP Implementation", "Project Management"]
@@ -65,25 +69,25 @@ Job Description:
 {job_description}
 '''
 
-# Updated project generation prompt to integrate industry & domain keywords, metrics, and KPIs
 project_generation_template = '''
-You are an industry expert in **{domain}** within the **{industry}** sector. Using the selected skills [{skills}], the candidate’s resume text, and the job description, do the following:
+You are an industry expert in {domain}. Given these inputs:
+- Selected Skills: [{skills}]
+- Resume Text: {resume_text}
+- Job Description: {job_description}
+- Industry Context and Seniority: ["{industry}", "{seniority}"]
 
-1. Extract 3–5 key performance indicators or metrics directly implied by the job description (e.g., cost savings %, project delivery time reduction, process efficiency gains).
-2. For each KPI, craft {num_projects} ATS-friendly resume project entries that:
-   - Are strictly grounded in the candidate’s real experience and selected skills (no hallucinations).
-   - Strongly incorporate **industry** and **domain** keywords to reinforce alignment (e.g., using terms like **"Supply Chain Optimization"** if industry is Retail and domain is Supply Chain).
-   - Begin with a project title that reflects both domain and industry context.
-   - Include 3–4 bullet points:
-     * First bullet quantifies business impact using one of the identified KPIs, with metrics and **bolded** domain/industry keywords.
-     * Remaining bullets describe actions, methodologies, tools, and processes, weaving in relevant resume and JD keywords along with domain-specific terminology (e.g., frameworks, platforms used in that industry).
+First, identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery time, process efficiency). Then generate {num_projects} ATS-friendly resume projects that:
+- Are strictly grounded in the candidate's actual experience and selected skills (no new domains).
+- Include a project title and 3–4 bullet points:
+  * First bullet quantifies business impact using one KPI and **bold** key terms.
+  * Remaining bullets describe actions, methodologies, tools, and processes, using keywords from the resume and JD.
 
-Format output exactly:
-### Project {n}: [Title reflecting {domain} in {industry}]
-* [Quantified impact with KPI and **bold** domain/industry terms]
-* [Action/methodology with **bold** domain-specific terms]
-* [Action/methodology with **bold** industry-specific terms]
-* [Action/methodology with **bold** tools/processes]
+Format:
+### Project {{n}}: [Title]
+* [Quantified impact with **bold** KPI]
+* [Action/methodology with **bold** terms]
+* [Action/methodology with **bold** terms]
+* [Action/methodology with **bold** terms]
 '''
 
 # ---------------------------
@@ -113,9 +117,9 @@ def analyze_job_description(job_desc, comp_name):
         data = json.loads(result)
         return data.get("Industry", "Unknown"), data.get("Domain", "Unknown"), data.get("Seniority", "Mid-level")
     except json.JSONDecodeError:
-        industry = re.search(r'"Industry"\s*:\s*"(.*?)"', result)
-        domain = re.search(r'"Domain"\s*:\s*"(.*?)"', result)
-        seniority = re.search(r'"Seniority"\s*:\s*"(.*?)"', result)
+        industry = re.search(r'"Industry"\s*[:]\s*"(.*?)"', result)
+        domain = re.search(r'"Domain"\s*[:]\s*"(.*?)"', result)
+        seniority = re.search(r'"Seniority"\s*[:]\s*"(.*?)"', result)
         return (
             industry.group(1).strip() if industry else "Unknown",
             domain.group(1).strip() if domain else "Unknown",
@@ -151,6 +155,7 @@ def generate_projects(domain, skills, resume_text, job_description, industry, se
 # ---------------------------
 # UI Flow
 # ---------------------------
+st.title("📄 Resume Project Generator")
 st.markdown("Generate domain-specific projects grounded in your actual experience, enriched by JD metrics.")
 
 # Inputs
@@ -160,7 +165,7 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze and extract skills
 if resume_file and company_name and job_description:
-    if st.button("🔍 Analyze & Extract Skills"):
+    if st.button("🔍 Analyze Resume & Extract Skills"):
         with st.spinner("Extracting resume, analyzing JD, and extracting skills..."):
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
