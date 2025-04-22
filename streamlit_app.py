@@ -3,6 +3,7 @@
 
 import streamlit as st
 import re
+import json
 import PyPDF2
 import google.generativeai as genai
 import langchain
@@ -29,12 +30,15 @@ genai.configure(api_key=api_key)
 # ---------------------------
 # Initialize LLM
 # ---------------------------
+# ---------------------------
+# Initialize LLM
+# ---------------------------
 def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         google_api_key=api_key,
         temperature=0.5,
-        max_tokens=1200
+        max_tokens=1500
     )
 
 # ---------------------------
@@ -45,16 +49,21 @@ You are an expert career consultant. Analyze the following job description for a
 1. Industry (e.g., Retail, Healthcare, Technology)
 2. Domain within that industry (e.g., Data Science, Project Management)
 3. Seniority level (Entry-level, Mid-level, Senior, Executive)
-Format exactly as key:value pairs.
+
+Return your answer as a JSON object with keys: "Industry", "Domain", "Seniority". Example:
+{"Industry": "Technology", "Domain": "Project Management", "Seniority": "Mid-level"}
+
 Job Description:
 {job_description}
 '''
 
 stems_template = '''
 You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples include "ERP Implementation", "Project Management", "Software Development".
-Output a JSON array of skill strings.
+Output a JSON array of skill strings, e.g.: ["ERP Implementation", "Project Management"]
+
 Resume Text:
 {resume_text}
+
 Job Description:
 {job_description}
 '''
@@ -64,17 +73,17 @@ You are an industry expert in {domain}. Given these inputs:
 - Selected Skills: [{skills}]
 - Resume Text: {resume_text}
 - Job Description: {job_description}
-- Industry Context and Seniority: [{industry}, {seniority}]
+- Industry Context and Seniority: ["{industry}", "{seniority}"]
 
-First, identify 3–5 key performance indicators (KPIs) or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery times, process efficiency). Then generate {num_projects} ATS-friendly resume projects that:
-- Are strictly grounded in the candidate’s actual experience and selected skills. Do not hallucinate new domains.
-- Include a project title and 3–4 bullet points.
-  * The first bullet must quantify business impact using one of the identified KPIs and **bold** key terms and metrics.
-  * Remaining bullets should describe specific actions, methodologies, tools, processes, and relevant keywords from the resume and JD.
+First, identify 3–5 KPIs or metrics implied by the job description that the candidate could plausibly have influenced (e.g., cost savings %, project delivery time, process efficiency). Then generate {num_projects} ATS-friendly resume projects that:
+- Are strictly grounded in the candidate's actual experience and selected skills (no new domains).
+- Include a project title and 3–4 bullet points:
+  * First bullet quantifies business impact using one KPI and **bold** key terms.
+  * Remaining bullets describe actions, methodologies, tools, and processes, using keywords from the resume and JD.
 
 Format:
 ### Project {{n}}: [Title]
-* [Quantified impact with **bold** KPI and terms]
+* [Quantified impact with **bold** KPI]
 * [Action/methodology with **bold** terms]
 * [Action/methodology with **bold** terms]
 * [Action/methodology with **bold** terms]
@@ -103,15 +112,18 @@ def analyze_job_description(job_desc, comp_name):
     llm = get_llm()
     chain = LLMChain(prompt=job_analysis_prompt, llm=llm)
     result = chain.run(job_description=job_desc, company_name=comp_name)
-    # parse key:value format
-    industry = re.search(r'Industry:\s*(.*)', result)
-    domain = re.search(r'Domain:\s*(.*)', result)
-    seniority = re.search(r'Seniority:\s*(.*)', result)
-    return (
-        industry.group(1).strip() if industry else "Unknown",
-        domain.group(1).strip() if domain else "Unknown",
-        seniority.group(1).strip() if seniority else "Mid-level"
-    )
+    try:
+        data = json.loads(result)
+        return data.get("Industry", "Unknown"), data.get("Domain", "Unknown"), data.get("Seniority", "Mid-level")
+    except json.JSONDecodeError:
+        industry = re.search(r'"Industry"\s*[:]\s*"(.*?)"', result)
+        domain = re.search(r'"Domain"\s*[:]\s*"(.*?)"', result)
+        seniority = re.search(r'"Seniority"\s*[:]\s*"(.*?)"', result)
+        return (
+            industry.group(1).strip() if industry else "Unknown",
+            domain.group(1).strip() if domain else "Unknown",
+            seniority.group(1).strip() if seniority else "Mid-level"
+        )
 
 
 def extract_stems(res_text, job_desc):
@@ -119,9 +131,9 @@ def extract_stems(res_text, job_desc):
     chain = LLMChain(prompt=stems_prompt, llm=llm)
     response = chain.run(resume_text=res_text, job_description=job_desc)
     try:
+        stems = json.loads(response)
+    except json.JSONDecodeError:
         stems = re.findall(r'"(.*?)"', response)
-    except Exception:
-        stems = []
     return stems
 
 
@@ -152,18 +164,15 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze and extract skills
 if resume_file and company_name and job_description:
-    if st.button("🔍 Analyze & Extract Skills"):
+    if st.button("🔍 Analyze Resume & Extract Skills"):
         with st.spinner("Extracting resume, analyzing JD, and extracting skills..."):
-            # extract resume text
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
             st.session_state['resume_text'] = res_text
-            # JD analysis
             ind, dom, sen = analyze_job_description(job_description, company_name)
             st.session_state['industry'] = ind
             st.session_state['domain'] = dom
             st.session_state['seniority'] = sen
-            # skill stems
             stems = extract_stems(res_text, job_description)
             st.session_state['stems'] = stems
         st.success("Analysis complete.")
@@ -198,7 +207,7 @@ if 'stems' in st.session_state:
             st.subheader("Generated Projects")
             st.markdown(projects_md)
             st.download_button(
-                label="Download",
+                label="Download Projects as Text",
                 data=projects_md,
                 file_name=f"projects_{company_name.replace(' ', '_')}.txt",
                 mime="text/plain"
