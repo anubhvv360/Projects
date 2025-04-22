@@ -43,7 +43,7 @@ def get_llm():
         model="gemini-2.0-flash",
         google_api_key=api_key,
         temperature=0.3,
-        max_tokens=1500
+        max_tokens=1000
     )
 
 # ---------------------------
@@ -65,10 +65,12 @@ Job Description:
 '''
 
 stems_template = '''
-You are a career coach. Given resume bullet points and a job description, return only those bullet points (stems) that are most relevant to the job. Output as a JSON array of strings.
+You are a career coach. Given the text of a resume and a job description, extract the key domain and functional skills common to both. Examples of such skills include "ERP Implementation", "Project Management", "Software Development".
 
-Resume Bullets:
-{resume_bullets}
+Output a JSON array of skills (strings), without additional text.
+
+Resume Text:
+{resume_text}
 
 Job Description:
 {job_description}
@@ -82,7 +84,7 @@ job_analysis_prompt = PromptTemplate(
     template=job_analysis_template
 )
 stems_prompt = PromptTemplate(
-    input_variables=["resume_bullets","job_description"],
+    input_variables=["resume_text","job_description"],
     template=stems_template
 )
 
@@ -104,29 +106,17 @@ def analyze_job_description(job_desc, comp_name):
 
 
 def extract_stems(res_text, job_desc):
-    # Improved bullet extraction: any line longer than a threshold is considered
-    lines = res_text.split("\n")
-    bullets = []
-    for line in lines:
-        txt = line.strip()
-        if len(txt) > 30:  # threshold for substantive lines
-            # prefix as bullet for prompt
-            bullets.append(f"- {txt}")
-    if not bullets:
-        st.warning("No substantial lines found in resume; ensure your PDF contains extractable text.")
-    bullets_text = "\n".join(bullets)
-    # Call LLM to filter relevant stems
+    """
+    Extract domain and functional skills common to resume and job description.
+    """
     llm = get_llm()
     chain = LLMChain(prompt=stems_prompt, llm=llm)
-    resp = chain.run(resume_bullets=bullets_text, job_description=job_desc)
-    # Parse JSON array or fallback to lines
-    stems = []
+    response = chain.run(resume_text=res_text, job_description=job_desc)
+    # parse JSON array
     try:
-        stems = re.findall(r'"(.*?)"', resp)
-        if not stems:
-            stems = [line.strip('- ').strip() for line in resp.splitlines() if line.strip()]
+        stems = re.findall(r'"(.*?)"', response)
     except Exception:
-        stems = [line.strip('- ').strip() for line in resp.splitlines() if line.strip()]
+        stems = []
     return stems
 
 # ---------------------------
@@ -142,33 +132,33 @@ job_description = st.text_area("Paste Job Description", height=250)
 
 # Analyze button
 if resume_file and company_name and job_description:
-    if st.button("Analyze Resume & Extract Stems"):
-        with st.spinner("Extracting resume text and analyzing..."):
-            # Extract text
+    if st.button("Analyze Resume & Extract Skills" ):
+        with st.spinner("Analyzing job description and resume..."):
+            # Extract resume text
             reader = PyPDF2.PdfReader(resume_file)
             res_text = "".join([p.extract_text() or "" for p in reader.pages])
             st.session_state['resume_text'] = res_text
-            # Analyze JD
+            # Analyze job description
             ind, dom, sen = analyze_job_description(job_description, company_name)
             st.session_state['industry'] = ind
             st.session_state['domain'] = dom
             st.session_state['seniority'] = sen
-            # Extract stems
+            # Extract stems (skills)
             stems = extract_stems(res_text, job_description)
             st.session_state['stems'] = stems
-        st.success("Analysis complete.")
+        st.success("Skill extraction complete.")
 
 # Display analysis results
 if 'industry' in st.session_state:
     st.subheader("Job Analysis")
     st.markdown(f"**Industry:** {st.session_state['industry']}")
     st.markdown(f"**Domain:** {st.session_state['domain']}")
-    st.markdown(f"**Seniority:** {st.session_state['seniority']}")
+    st.markdown(f"**Seniority:** {st.session_state['seniority']}" )
 
 # Display stems selection
 if 'stems' in st.session_state:
-    st.subheader("Select Experience Stems to Use")
-    selected = st.multiselect("Relevant Stems", options=st.session_state['stems'])
+    st.subheader("Select Key Skills to Emphasize")
+    selected = st.multiselect("Relevant Skills", options=st.session_state['stems'])
     if selected:
         st.markdown("**You selected:**")
         for s in selected:
